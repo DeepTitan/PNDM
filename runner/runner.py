@@ -14,7 +14,6 @@
 
 import os
 import sys
-import tqdm
 import time
 import torch as th
 import numpy as np
@@ -23,6 +22,7 @@ import torch.utils.data as data
 import torchvision.utils as tvu
 import torch.utils.tensorboard as tb
 from scipy import integrate
+from tqdm.auto import tqdm
 
 from dataset import get_dataset, inverse_data_transform
 from model.ema import EMAHelper
@@ -119,7 +119,7 @@ class Runner(object):
                     print(step, loss.item())
                 if step % 500 == 0:
                     config = self.config['Dataset']
-                    skip = self.diffusion_step // self.args.sample_step
+                    skip = self.diffusion_step // self.sample_speed
                     seq = range(0, self.diffusion_step, skip)
                     noise = th.randn(16, config['channels'], config['image_size'],
                                      config['image_size'], device=self.device)
@@ -152,14 +152,14 @@ class Runner(object):
         n = config['batch_size']
         total_num = config['total_num']
 
-        skip = self.diffusion_step // self.args.sample_step
+        skip = self.diffusion_step // self.sample_speed
         seq = range(0, self.diffusion_step, skip)
         seq_next = [-1] + list(seq[:-1])
         image_num = 0
 
         config = self.config['Dataset']
         if mpi_rank == 0:
-            my_iter = tqdm.tqdm(range(total_num // n + 1), ncols=120)
+            my_iter = tqdm(range(total_num // n + 1), ncols=120)
         else:
             my_iter = range(total_num // n + 1)
 
